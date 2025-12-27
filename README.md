@@ -240,10 +240,31 @@ ls -la ./data/mariadb/
 
 ## Maintenance
 
-### Update Supernote Version
+### Checking for Updates
+
+Supernote doesn't publish a compatibility matrix, so there's no official signal when to update. The safest approach:
+
+**1. Check Supernote's official docker-compose for version changes:**
+```bash
+curl -s https://supernote-private-cloud.supernote.com/docker-deploy/docker-compose.yml
+```
+
+When Supernote bumps MariaDB or Redis versions in their official file, it's safe to update yours.
+
+**2. Check for new Supernote image versions on Docker Hub:**
+- [supernote/supernote-service](https://hub.docker.com/r/supernote/supernote-service/tags)
+- [supernote/notelib](https://hub.docker.com/r/supernote/notelib/tags)
+
+**3. Conservative approach:** MariaDB 10.6.x and Redis 7.x are LTS/stable branches. Only update these when Supernote's official compose changes, or if you need security patches.
+
+**4. Community resources:**
+- [Supernote subreddit](https://reddit.com/r/supernote) — users often report issues with new versions
+- [Supernote Support](https://support.supernote.com/) — official announcements
+
+### Applying Updates
 
 1. Update image versions in `docker-compose.yml`
-2. Restart: `docker compose up -d`
+2. Pull and restart: `docker compose up -d`
 3. Docker will automatically pull new images
 
 ### Rotate SSL Certificate
