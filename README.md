@@ -30,8 +30,8 @@ All services communicate through a private Docker bridge network (`supernote-net
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd supernote
+git clone https://github.com/liketheduck/supernote-private-cloud-docker.git
+cd supernote-private-cloud-docker
 
 # Copy example files
 cp docker-compose.example.yml docker-compose.yml
