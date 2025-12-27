@@ -1,0 +1,32 @@
+-- Email configuration for Supernote Private Cloud
+-- Optional: Configure SMTP for user registration emails
+--
+-- SETUP:
+-- 1. Copy this file to supernote-email-init.sql
+-- 2. Update the SMTP settings below with your email provider
+-- 3. Uncomment the email volume in docker-compose.yml
+--
+-- For Gmail:
+--   - Enable 2FA on your Google account
+--   - Generate an App Password: https://myaccount.google.com/apppasswords
+--   - Use the app password (not your regular password)
+
+USE supernotedb;
+
+-- Insert SMTP config (update values for your email provider)
+INSERT INTO u_email_config (smtp_server, port, user_name, password, encryption, flag)
+VALUES (
+  'smtp.gmail.com',           -- SMTP server (gmail, outlook, etc.)
+  '465',                      -- Port (465 for SSL, 587 for TLS)
+  'your-email@gmail.com',     -- Your email address
+  'xxxx xxxx xxxx xxxx',      -- App password (NOT your regular password)
+  'ssl',                      -- Encryption: 'ssl' or 'tls'
+  'Y'                         -- Enable flag
+)
+ON DUPLICATE KEY UPDATE
+  smtp_server='smtp.gmail.com',
+  port='465',
+  user_name='your-email@gmail.com',
+  password='xxxx xxxx xxxx xxxx',
+  encryption='ssl',
+  flag='Y';

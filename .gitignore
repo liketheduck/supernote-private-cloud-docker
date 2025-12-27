@@ -1,0 +1,28 @@
+# Environment and secrets
+.env
+*.pem
+*.key
+*.crt
+
+# Personal configuration
+docker-compose.yml
+supernote-email-init.sql
+README.local.md
+
+# Data directories
+data/
+cert/
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Claude Code
+.claude/

@@ -1,0 +1,111 @@
+# Supernote Private Cloud - Docker Compose Configuration
+# HTTPS enabled with self-signed certificate
+#
+# SETUP:
+# 1. Copy this file to docker-compose.yml
+# 2. Copy .env.example to .env and configure your settings
+# 3. Update the volume paths below to match your system
+# 4. (Optional) Copy supernote-email-init.sql.example to supernote-email-init.sql for email
+
+services:
+  supernote-mariadb:
+    image: mariadb:10.6.24
+    container_name: supernote-mariadb
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=supernotedb
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      # Database storage - update path for your system
+      - ./data/mariadb:/var/lib/mysql
+      - ./supernotedb.sql:/docker-entrypoint-initdb.d/supernotedb.sql:ro
+      # Uncomment if using email functionality:
+      # - ./supernote-email-init.sql:/docker-entrypoint-initdb.d/z-email-init.sql:ro
+    networks:
+      - supernote-net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    # No ports exposed - only accessible within docker network
+
+  supernote-redis:
+    image: redis:7.4.7-alpine
+    container_name: supernote-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD} --dir /data --dbfilename dump.rdb --appendonly yes
+    volumes:
+      # Redis data storage - update path for your system
+      - ./data/redis:/data
+    networks:
+      - supernote-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    # No ports exposed - only accessible within docker network
+
+  supernote-notelib:
+    image: docker.io/supernote/notelib:6.9.3
+    container_name: supernote-notelib
+    restart: unless-stopped
+    networks:
+      - supernote-net
+    depends_on:
+      supernote-mariadb:
+        condition: service_healthy
+
+  supernote-service:
+    image: docker.io/supernote/supernote-service:25.11.24
+    container_name: supernote-service
+    restart: unless-stopped
+    environment:
+      - DB_HOSTNAME=supernote-mariadb
+      - MYSQL_DATABASE=supernotedb
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - REDIS_HOST=supernote-redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      # HTTPS Configuration
+      - DOMAIN_NAME=${DOMAIN_NAME}
+      - SSL_CERT_NAME=${SSL_CERT_NAME}
+      - SSL_KEY_NAME=${SSL_KEY_NAME}
+    volumes:
+      # Main data storage - update paths for your system
+      - ./data/supernote:/home/supernote/data
+      - ./data/recycle:/home/supernote/recycle
+      - ./data/convert:/home/supernote/convert
+      # SSL certificates
+      - ./cert:/etc/nginx/cert
+      # Logs
+      - ./logs/cloud:/home/supernote/cloud/logs
+      - ./logs/app:/home/supernote/logs
+      - ./logs/web:/var/log/nginx
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      # HTTPS access (primary)
+      - "19443:443"
+      # HTTP access (fallback/redirect)
+      - "19072:8080"
+      # WebSocket for automatic sync
+      - "18072:18072"
+    networks:
+      - supernote-net
+    depends_on:
+      supernote-mariadb:
+        condition: service_healthy
+      supernote-redis:
+        condition: service_healthy
+      supernote-notelib:
+        condition: service_started
+
+networks:
+  supernote-net:
+    driver: bridge
+    name: supernote-net
