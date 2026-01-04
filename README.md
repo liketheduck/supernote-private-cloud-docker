@@ -9,9 +9,9 @@ This setup deploys a 4-service stack:
 - **MariaDB 10.6.24**: Database server for Supernote data
 - **Redis 7.4.7**: Cache layer with password authentication
 - **Notelib 6.9.3**: Supernote library service for document processing
-- **Supernote Service 25.11.24**: Main application with HTTPS, REST API, and WebSocket support
+- **Supernote Service 25.12.17**: Main application with HTTPS, REST API, and WebSocket support
 
-All services communicate through a private Docker bridge network (`supernote-net`). The MariaDB and Redis services are not exposed to host ports—only the Supernote service is accessible via HTTPS.
+All services communicate through a private Docker bridge network (`supernote-net`). The MariaDB and Redis services are not exposed to host ports by default—only the Supernote service is accessible via HTTPS. MariaDB can optionally be exposed for integrations like [supernote-apple-reminders-sync](https://github.com/liketheduck/supernote-apple-reminders-sync).
 
 ## Prerequisites
 
@@ -103,6 +103,7 @@ docker compose ps
 | **19443** | HTTPS | Primary access (secure) |
 | **19072** | HTTP | Fallback/redirect to HTTPS |
 | **18072** | WebSocket | Document auto-sync between devices |
+| **3306** | TCP | MariaDB (optional, for integrations) |
 
 ## Initial Setup
 

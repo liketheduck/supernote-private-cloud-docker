@@ -31,7 +31,9 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-    # No ports exposed - only accessible within docker network
+    # Uncomment to expose database for external integrations (e.g., Apple Reminders sync):
+    # ports:
+    #   - "3306:3306"
 
   supernote-redis:
     image: redis:7.4.7-alpine
@@ -61,7 +63,7 @@ services:
         condition: service_healthy
 
   supernote-service:
-    image: docker.io/supernote/supernote-service:25.11.24
+    image: docker.io/supernote/supernote-service:25.12.17
     container_name: supernote-service
     restart: unless-stopped
     environment:
