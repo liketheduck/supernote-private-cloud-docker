@@ -71,6 +71,24 @@ openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
   -addext "subjectAltName=DNS:your-hostname.local,DNS:localhost,IP:127.0.0.1"
 ```
 
+**Customize for your setup:**
+- Replace `your-hostname.local` with your server's actual hostname (in both `-subj` and `-addext`)
+- Add your server's IP address(es) to `subjectAltName` (e.g., `IP:192.168.1.100`)
+- Include all hostnames and IPs you'll use to access the server
+
+**Example with multiple IPs:**
+```bash
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+  -keyout cert/server.key \
+  -out cert/server.crt \
+  -subj "/CN=my-server.local" \
+  -addext "basicConstraints=critical,CA:TRUE" \
+  -addext "keyUsage=critical,keyCertSign,cRLSign,digitalSignature,keyEncipherment" \
+  -addext "subjectAltName=DNS:my-server.local,DNS:localhost,IP:192.168.1.100,IP:127.0.0.1"
+```
+
+**For mobile/partner apps:** After setup, you'll need to install the certificate on your devices. See [HTTPS certificate errors](#https-certificate-errors) in Troubleshooting for iOS and Android instructions.
+
 ### 5. Start Services
 
 ```bash
