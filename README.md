@@ -8,7 +8,7 @@ This setup deploys a 4-service stack:
 
 - **MariaDB 10.6.24**: Database server for Supernote data
 - **Redis 7.4.7**: Cache layer with password authentication
-- **Notelib 6.9.3**: Supernote library service for document processing
+- **Notelib 6.9.3**: Supernote library service for document conversion (note viewing)
 - **Supernote Service 25.12.17**: Main application with HTTPS, REST API, and WebSocket support
 
 All services communicate through a private Docker bridge network (`supernote-net`). The MariaDB and Redis services are not exposed to host ports by default—only the Supernote service is accessible via HTTPS. MariaDB can optionally be exposed for integrations like [supernote-apple-reminders-sync](https://github.com/liketheduck/supernote-apple-reminders-sync).
@@ -174,6 +174,7 @@ Services are configured with:
 - **Dependencies**: Services wait for required services to be healthy
 - **Restart policy**: `unless-stopped` (survives host reboot)
 - **Networks**: Private `supernote-net` bridge (services isolated from other Docker containers)
+- **Notelib alias**: The notelib container must have the network alias `notelib` (the supernote-service has this hostname hardcoded)
 
 ## Commands
 
@@ -237,6 +238,36 @@ docker compose logs supernote-mariadb | grep -i error
 
 # Check data directory permissions
 ls -la ./data/mariadb/
+```
+
+### Note conversion not working (viewing notes in browser)
+
+The notelib service converts `.note` files to PNG for browser viewing. After conversion, notelib must upload the images back to supernote-service via HTTPS.
+
+**With self-signed certificates**, notelib cannot trust the certificate and uploads fail:
+```
+curl_easy_perform() failed: SSL peer certificate or SSH remote key was not OK
+```
+
+**Solution - Create a CA bundle with your self-signed cert:**
+
+The `docker-compose.example.yml` already includes the volume mount for this. You just need to create the CA bundle file:
+
+```bash
+# Start containers first (if not already running)
+docker compose up -d
+
+# Extract the default CA bundle from notelib container and append your cert
+docker exec supernote-notelib cat /etc/ssl/certs/ca-certificates.crt > cert/ca-bundle.crt
+cat cert/server.crt >> cert/ca-bundle.crt
+
+# Restart to apply
+docker compose down && docker compose up -d
+```
+
+**Check logs** to confirm the issue or verify the fix:
+```bash
+docker logs supernote-notelib --tail 50 | grep -i "SSL\|certificate\|upload"
 ```
 
 ## Maintenance

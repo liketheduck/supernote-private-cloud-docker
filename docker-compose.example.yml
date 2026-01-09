@@ -56,8 +56,13 @@ services:
     image: docker.io/supernote/notelib:6.9.3
     container_name: supernote-notelib
     restart: unless-stopped
+    volumes:
+      # Mount CA bundle with self-signed cert for HTTPS uploads (see README for setup)
+      - ./cert/ca-bundle.crt:/etc/ssl/certs/ca-certificates.crt:ro
     networks:
-      - supernote-net
+      supernote-net:
+        aliases:
+          - notelib  # Required: supernote-service expects hostname 'notelib'
     depends_on:
       supernote-mariadb:
         condition: service_healthy
