@@ -61,10 +61,13 @@ Edit `docker-compose.yml` and update the volume paths to match your system. The 
 mkdir -p cert
 
 # Generate self-signed certificate (valid 10 years)
+# Includes CA extensions so mobile devices can trust it
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
   -keyout cert/server.key \
   -out cert/server.crt \
   -subj "/CN=your-hostname.local" \
+  -addext "basicConstraints=critical,CA:TRUE" \
+  -addext "keyUsage=critical,keyCertSign,cRLSign,digitalSignature,keyEncipherment" \
   -addext "subjectAltName=DNS:your-hostname.local,DNS:localhost,IP:127.0.0.1"
 ```
 
@@ -220,7 +223,20 @@ df -h
 
 This is normal with a self-signed certificate. Your browser will warn you—accept the certificate exception to continue.
 
-On mobile devices, you may need to install the certificate in your device's certificate store.
+**For mobile/partner apps**, you must install the certificate on your device:
+
+**iOS:**
+1. Transfer `server.crt` to your device (AirDrop, email, etc.)
+2. Open the file → Settings will prompt to install the profile
+3. Go to **Settings → General → VPN & Device Management** → Install the profile
+4. Go to **Settings → General → About** → scroll to bottom → **Certificate Trust Settings**
+5. Enable full trust for your certificate
+
+**Android:**
+1. Transfer `server.crt` to your device
+2. **Settings → Security → Encryption & credentials → Install a certificate → CA certificate**
+
+**Note:** The certificate must be generated with `CA:TRUE` (see Generate SSL Certificate section) for mobile devices to show the trust option.
 
 ### Email not sending
 
@@ -301,9 +317,11 @@ When Supernote bumps MariaDB or Redis versions in their official file, it's safe
 
 ### Rotate SSL Certificate
 
-1. Generate new certificate files
+1. Generate new certificate with CA extensions (see Generate SSL Certificate section)
 2. Copy to `cert/` directory
-3. Restart: `docker compose restart supernote-service`
+3. Recreate CA bundle for notelib (see Note conversion troubleshooting section)
+4. Restart: `docker compose down && docker compose up -d`
+5. Re-install certificate on mobile devices if applicable
 
 ## Security Considerations
 
